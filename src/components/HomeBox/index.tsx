@@ -13,7 +13,7 @@ function Index() {
   const boxData = [
     { id: '1', icon: 'account-alert-outline', iconSet: 'MaterialCommunityIcons', color: '#b185fa', text: 'Acil Durum', navigateTo: 'SosScreen' },
     { id: '2', icon: 'crisis-alert', iconSet: 'MaterialIcons', color: '#fe9899', text: 'Anlık Depremler', navigateTo: 'EarthquakeScreen' },
-    { id: '3', icon: 'weather-cloudy', iconSet: 'MaterialCommunityIcons', color: '#70d0fb', text: 'Hava Durumu', navigateTo: 'AttentionScreen' },
+    { id: '3', icon: 'weather-cloudy', iconSet: 'MaterialCommunityIcons', color: '#70d0fb', text: 'Hava Durumu', navigateTo: 'WeatherScreen' },
     { id: '4', icon: 'warning', iconSet: 'MaterialIcons', color: '#63db9a', text: 'Tehlike', navigateTo: 'DangerScreen' },
   ];
   <MaterialCommunityIcons name="account-alert-outline" size={24} color="black" />

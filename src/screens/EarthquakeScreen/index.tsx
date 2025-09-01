@@ -1,111 +1,174 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Text, Animated } from 'react-native';
+import MapView, { Marker, Circle } from 'react-native-maps';
 
+// Veri modelimiz
 type EarthquakeData = {
+  id: string;
   Date: string;
   Time: string;
-  Magnitude: string;
+  Latitude: number;
+  Longitude: number;
+  Depth: number;
+  Magnitude: number;
   Location: string;
-  Depth: string;
-  Latitude: string;
-  Longitude: string;
 };
 
 const EarthquakeScreen: React.FC = () => {
   const [earthquakes, setEarthquakes] = useState<EarthquakeData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [showWarning, setShowWarning] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
 
-  // API'den veriyi çekmek için useEffect kullanıyoruz.
   useEffect(() => {
     const fetchEarthquakeData = async () => {
       try {
-        const response = await fetch('https://www.koeri.boun.edu.tr/scripts/lst6.asp');
-        const data = await response.text(); // Veriyi metin formatında alıyoruz.
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const formatDate = (date: Date) => date.toISOString().split('T')[0];
+        const todayStr = formatDate(today);
+        const yesterdayStr = formatDate(yesterday);
+
+        const [todayResponse, yesterdayResponse] = await Promise.all([
+          fetch(`https://api.orhanaydogdu.com.tr/deprem/kandilli/archive?date=${todayStr}`),
+          fetch(`https://api.orhanaydogdu.com.tr/deprem/kandilli/archive?date=${yesterdayStr}`)
+        ]);
+
+        const todayData = await todayResponse.json();
+        const yesterdayData = await yesterdayResponse.json();
         
-        // Metni işleyerek JSON formatına dönüştürmemiz gerekebilir.
-        // Bu örnekte, sadece basit bir işleme yapacağız, verilerin formatı doğru şekilde işlenmelidir.
-        
-        const parsedData = processEarthquakeData(data);
-        setEarthquakes(parsedData);
-        setLoading(false);
+        let combinedResults = [];
+        if (todayData && todayData.result && Array.isArray(todayData.result)) {
+          combinedResults.push(...todayData.result);
+        }
+        if (yesterdayData && yesterdayData.result && Array.isArray(yesterdayData.result)) {
+          combinedResults.push(...yesterdayData.result);
+        }
+
+        if (combinedResults.length > 0) {
+          const filteredEarthquakes = combinedResults.filter((dep: any) => dep.mag >= 2.5);
+
+          const parsedData: EarthquakeData[] = filteredEarthquakes
+            .map((dep: any) => {
+              if (!dep.geojson?.coordinates || !dep.earthquake_id) {
+                return null;
+              }
+              const datetime = dep.date.split(' ');
+              return {
+                id: dep.earthquake_id,
+                Date: datetime[0],
+                Time: datetime[1],
+                Latitude: dep.geojson.coordinates[1],
+                Longitude: dep.geojson.coordinates[0],
+                Depth: dep.depth,
+                Magnitude: dep.mag,
+                Location: dep.title,
+              };
+            })
+            .filter((eq): eq is EarthquakeData => eq !== null);
+            
+          setEarthquakes(parsedData);
+        }
       } catch (error) {
-        console.error("Veri çekilirken hata oluştu: ", error);
+        console.error("Deprem verisi alınamadı: ", error);
+      } finally {
         setLoading(false);
+        setShowWarning(true);
+        Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+        setTimeout(() => {
+          Animated.timing(fadeAnim, { toValue: 0, duration: 500, useNativeDriver: true }).start(() => setShowWarning(false));
+        }, 10000);
       }
     };
 
     fetchEarthquakeData();
-  }, []);
+  }, [fadeAnim]);
 
-  // Metin verisini işleyerek daha anlamlı hale getiriyoruz (örnek işlem).
-  const processEarthquakeData = (data: string): EarthquakeData[] => {
-    const rows = data.split("\n").slice(1); // Satırlara ayırıyoruz
-    return rows.map(row => {
-      const cols = row.split("\t");
-      return {
-        Date: cols[0],
-        Time: cols[1],
-        Magnitude: cols[2],
-        Location: cols[3],
-        Depth: cols[4],
-        Latitude: cols[5],
-        Longitude: cols[6]
-      };
-    });
-  };
-
-  // Eğer veri yükleniyorsa, bir loading spinner gösterelim
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text>Veriler yükleniyor...</Text>
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#2a3e5a" />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={earthquakes}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <Text style={styles.text}>Tarih: {item.Date}</Text>
-            <Text style={styles.text}>Saat: {item.Time}</Text>
-            <Text style={styles.text}>Büyüklük: {item.Magnitude}</Text>
-            <Text style={styles.text}>Lokasyon: {item.Location}</Text>
-            <Text style={styles.text}>Derinlik: {item.Depth} km</Text>
-            <Text style={styles.text}>Enlem: {item.Latitude}</Text>
-            <Text style={styles.text}>Boylam: {item.Longitude}</Text>
-          </View>
-        )}
-      />
+    <View style={styles.fullScreenContainer}>
+      {/* MapView'dan "provider" prop'u kaldırıldı */}
+      <MapView
+        style={styles.map}
+        initialRegion={{
+          latitude: 39.0,
+          longitude: 35.0,
+          latitudeDelta: 15,
+          longitudeDelta: 15,
+        }}
+      >
+        {earthquakes.map((eq) => (
+          <React.Fragment key={eq.id}>
+            <Marker
+              coordinate={{ latitude: eq.Latitude, longitude: eq.Longitude }}
+              title={`${eq.Location} (${eq.Magnitude})`}
+              description={`Tarih: ${eq.Date} Saat: ${eq.Time}`}
+              pinColor="red"
+            />
+            <Circle
+              center={{ latitude: eq.Latitude, longitude: eq.Longitude }}
+              radius={eq.Magnitude * 8000}
+              strokeColor="rgba(255, 0, 0, 0.5)"
+              fillColor="rgba(255, 0, 0, 0.1)"
+            />
+          </React.Fragment>
+        ))}
+      </MapView>
+
+      {showWarning && (
+        <Animated.View style={[styles.warningContainer, { opacity: fadeAnim }]}>
+          <Text style={styles.warningText}>
+            Sadece 2.5 ve üzeri büyüklükteki son 48 saatin depremleri gösterilmektedir.
+          </Text>
+        </Animated.View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  fullScreenContainer: {
     flex: 1,
-    paddingTop: 20,
-    backgroundColor: '#fff',
-    paddingHorizontal: 10,
   },
-  item: {
-    backgroundColor: '#f9f9f9',
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
+  map: { 
+    ...StyleSheet.absoluteFillObject,
+  },
+  loader: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  warningContainer: {
+    position: 'absolute',
+    top: 50,
+    left: '5%',
+    right: '5%',
+    width: '90%',
+    backgroundColor: 'rgba(42, 62, 90, 0.9)',
+    borderRadius: 8,
+    padding: 12,
+    zIndex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
-  text: {
-    fontSize: 16,
-    color: '#333',
+  warningText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
 

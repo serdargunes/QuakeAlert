@@ -1,108 +1,127 @@
 import React, { useState, useEffect } from "react";
 import {
   View, Text, Vibration, Alert, SafeAreaView,
-  StyleSheet, Dimensions, TouchableOpacity
+  StyleSheet, Dimensions, TouchableOpacity, TextInput,
+  Platform // Platform'u import ettik
 } from "react-native";
 import * as Location from "expo-location";
-import { Linking } from "react-native";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Accelerometer } from "expo-sensors";
-import { TextInput } from 'react-native-paper';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import * as SMS from "expo-sms";
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-const Index = () => {
+const SosScreen: React.FC = () => {
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>(["", "", ""]);
-  const [accelerometerData, setAccelerometerData] = useState({ x: 0, y: 0, z: 0 });
+  const [isAccelerometerActive, setIsAccelerometerActive] = useState(false);
 
-  // Konum alma fonksiyonu
-  const getLocation = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Konum izni reddedildi.");
-      return null;
+  // Kayıtlı numaraları yükle
+  useEffect(() => {
+    const loadNumbers = async () => {
+      const saved = await AsyncStorage.getItem("phoneNumbers");
+      if (saved) setPhoneNumbers(JSON.parse(saved));
+    };
+    loadNumbers();
+  }, []);
+
+  // Düşme algılama için Accelerometer
+  useEffect(() => {
+    let subscription: any;
+    if (isAccelerometerActive) {
+      subscription = Accelerometer.addListener(accelerometerData => {
+        const { x, y, z } = accelerometerData;
+        const totalAcceleration = Math.sqrt(x * x + y * y + z * z);
+        const accelerationThreshold = 2.5; // Düşme hassasiyeti (ayarlanabilir)
+        if (totalAcceleration > accelerationThreshold) {
+          onEmergencyTriggered();
+        }
+      });
+      Accelerometer.setUpdateInterval(500); // Yarım saniyede bir kontrol et
     }
-    let location = await Location.getCurrentPositionAsync({});
-    return location.coords;
-  };
-
-  // WhatsApp mesajı gönderme
-  const sendLocationToWhatsApp = async (phoneNumber: string) => {
-    const location = await getLocation();
-    if (!location) {
-      Alert.alert("Konum alınamadı.");
-      return;
-    }
-
-    const message = `Acil Durum! Konum: https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-    const whatsappUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
-
-    Linking.openURL(whatsappUrl).catch(() => {
-      Alert.alert("WhatsApp açma hatası!");
-    });
-  };
+    return () => {
+      subscription && subscription.remove();
+    };
+  }, [isAccelerometerActive]);
 
   // Numaraları kaydetme
   const handleSaveNumbers = async () => {
-    if (phoneNumbers.every((num) => num === "")) {
-      Alert.alert("Lütfen en az bir telefon numarası girin.");
+    const validNumbers = phoneNumbers.filter(num => num.trim() !== "");
+    if (validNumbers.length === 0) {
+      Alert.alert("Hata", "Lütfen en az bir geçerli telefon numarası girin.");
       return;
     }
     await AsyncStorage.setItem("phoneNumbers", JSON.stringify(phoneNumbers));
-    Alert.alert("Numaralar başarıyla kaydedildi!");
+    Alert.alert("Başarılı", "Numaralar kaydedildi.");
+    setIsAccelerometerActive(true); // Numaralar kaydedilince düşme algılamayı başlat
   };
 
-  // Acil durum tetikleme
-  const onEmergencyTriggered = async () => {
-    Vibration.vibrate();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+  // Konum alma
+  const getLocation = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("İzin Gerekli", "Acil durum mesajı gönderebilmek için konum izni vermeniz gerekmektedir.");
+      return null;
+    }
+    return await Location.getCurrentPositionAsync({});
+  };
 
-    for (const phoneNumber of phoneNumbers) {
-      if (phoneNumber) {
-        await sendLocationToWhatsApp(phoneNumber);
+  // SMS ile konum gönderme (Platforma özel mantık)
+  const sendLocationViaSMS = async (numbers: string[]) => {
+    const location = await getLocation();
+    if (!location?.coords) return;
+
+    const { latitude, longitude } = location.coords;
+    const mapLink = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    // TODO: Bu bilgiler ileride "Bilgilerim" ekranından dinamik olarak alınacak
+    const message = `ACİL DURUM! Yardıma ihtiyacım var.\nKonumum: ${mapLink}\n\n---\nKan Grubu: A+\nBoy: 1.80m\nKilo: 75kg`;
+
+    const isAvailable = await SMS.isAvailableAsync();
+    if (isAvailable) {
+      const result = await SMS.sendSMSAsync(numbers, message);
+      console.log("SMS gönderme sonucu:", result.result);
+
+      // expo-sms her iki platformda da composer'ı açar.
+      // Aşağıdaki loglar, hangi platformda hangi davranışın beklendiğini gösterir.
+      if (Platform.OS === 'android') {
+        console.log("Android: SMS uygulaması açıldı. Otomatik gönderme için 'eject' ve farklı bir kütüphane gerekir.");
+      } else {
+        console.log("iOS: SMS uygulaması açıldı. Kullanıcının göndere basması bekleniyor.");
       }
+    } else {
+      Alert.alert("SMS Gönderilemiyor", "Cihazınızda SMS özelliği bulunmuyor veya aktif değil.");
     }
   };
 
-  // İvmeölçer ile düşüş algılama
-  useEffect(() => {
-    const subscription = Accelerometer.addListener(accelerometerData => {
-      setAccelerometerData(accelerometerData);
+  // Acil durumu tetikleme
+  const onEmergencyTriggered = async () => {
+    Vibration.vibrate([500, 500, 500]);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
-      const { x, y, z } = accelerometerData;
-      const acceleration = Math.sqrt(x * x + y * y + z * z);
+    const savedNumbers = await AsyncStorage.getItem("phoneNumbers");
+    const numbersToSend = savedNumbers ? JSON.parse(savedNumbers).filter(String) : [];
 
-      const accelerationThreshold = 10;
-      if (acceleration > accelerationThreshold) {
-        console.log("Acil durum algılandı: Düşüş veya ani hareket");
-        onEmergencyTriggered();
-      }
-    });
-
-    return () => subscription.remove();
-  }, []);
+    if (numbersToSend.length > 0) {
+      sendLocationViaSMS(numbersToSend);
+    } else {
+      Alert.alert("Numara Kayıtlı Değil", "Lütfen acil durumda aranacak en az bir numara kaydedin.");
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.alertbox}>
-      <MaterialCommunityIcons name="alert" size={200} color="#F06292" />
-      <View style = {{flexWrap:'wrap',}}>
-      <Text>-Numaraları Olabildiğince Başka Şehirlerden Seçiniz.</Text>
-      <Text>-Acil Durum Haricinde Tetikle Butonunu Kullanmayınız.</Text>
-      </View>
-      </View>
-      <View style={{ flex: 1, paddingHorizontal: 20 }}>
-        <Text style={styles.title}>Telefon Numaralarını Girin (Başında + ile):</Text>
-        {phoneNumbers.map((phoneNumber, index) => (
+      <View style={styles.content}>
+        <Text style={styles.title}>Acil Durum Numaraları</Text>
+        <Text style={styles.subtitle}>
+          Acil bir durumda (düşme algılandığında veya butona basıldığında) konumunuzun gönderileceği 3 telefon numarası girin.
+        </Text>
+        {phoneNumbers.map((_, index) => (
           <TextInput
-            mode="flat"
             key={index}
-            secureTextEntry
             style={styles.input}
-            placeholder={`Örn: +905xxxxxxxxx (Kişi ${index + 1})`}
-            value={phoneNumber}
+            placeholder={`Acil Durum Kişisi ${index + 1}`}
+            placeholderTextColor="#888"
+            value={phoneNumbers[index]}
             onChangeText={(text) => {
               const newPhoneNumbers = [...phoneNumbers];
               newPhoneNumbers[index] = text;
@@ -116,7 +135,7 @@ const Index = () => {
         <TouchableOpacity style={styles.button} onPress={handleSaveNumbers}>
           <Text style={styles.buttonText}>Numaraları Kaydet</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={onEmergencyTriggered}>
+        <TouchableOpacity style={[styles.button, styles.emergencyButton]} onPress={onEmergencyTriggered}>
           <Text style={styles.buttonText}>Acil Durum Tetikle</Text>
         </TouchableOpacity>
       </View>
@@ -127,62 +146,58 @@ const Index = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'space-between',
   },
-  alertbox:{
-    width:width*0.90,
-    marginLeft:20,
-    marginTop:20,
-    borderRadius:8,
-    shadowOffset: { width: 0, height: 4 },
-    shadowColor:'black',
-    shadowOpacity:0.5,
-    backgroundColor:'white',
-    height: 270, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  content: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 10,
-    marginTop: 30,
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginVertical: 15,
   },
   input: {
-    borderWidth: 2,
-    borderColor: "#B0B0B0",
+    borderWidth: 1,
+    borderColor: "#ccc",
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 15,
     marginVertical: 8,
     fontSize: 16,
-    fontWeight: "400",
     backgroundColor: "#FFFFFF",
-    color: "#333333",
     width: width * 0.90,
-    height: height * 0.04,
-
-
   },
   buttonContainer: {
     width: '100%',
-    paddingBottom: 20,
+    paddingBottom: 40,
     alignItems: 'center',
   },
   button: {
-    borderRadius: 50,
-    backgroundColor: 'black',
-    width: width * 0.9,
-    height: height * 0.08,
-    justifyContent: 'center',
+    borderRadius: 12,
+    paddingVertical: 15,
+    width: width * 0.90,
     alignItems: 'center',
-    marginBottom: 10,
+    marginVertical: 5,
+    backgroundColor: '#2a3e5a',
+  },
+  emergencyButton: {
+    backgroundColor: '#c0392b',
   },
   buttonText: {
     color: 'white',
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
-export default Index;
+export default SosScreen;
+

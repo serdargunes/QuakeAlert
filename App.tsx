@@ -5,6 +5,8 @@ import SosScreen from './src/screens/SosScreen'
 import EarthquakeScreen from './src/screens/EarthquakeScreen/index'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
+import MapScreen from './src/screens/screens/MapScreen'
+import WeatherScreen from './src/screens/WeatherScreen'
 
 
 
@@ -27,6 +29,8 @@ function App() {
         />
         <Stack.Screen name = "SosScreen" component={SosScreen} />
         <Stack.Screen name = "EarthquakeScreen" component={EarthquakeScreen} />
+        <Stack.Screen name="MapScreen" component={MapScreen} options={{ title: 'Harita' }} />
+        <Stack.Screen name="WeatherScreen" component={WeatherScreen} options={{ title: 'Hava Durumu' }} />
       </Stack.Navigator>
     </NavigationContainer>
   

@@ -13,13 +13,21 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "y"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAdSix9SNLrdOLyViES2Hz9I_Xvx4zh_pk"
+        }
+      },
+      "package": "com.anonymous.QuakeAlert"
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -15,7 +15,12 @@ import * as Location from 'expo-location';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// Tipleri güncelledim: WeatherData'ya hourly eklendi
+// --- DEĞİŞİKLİK 1: LinearGradient'in beklediği tipi tanımladık ---
+// Bu tip, "gradient" özelliğinin her zaman en az 2 renk içeren bir dizi olacağını garanti eder.
+type WeatherLook = {
+  gradient: readonly [string, string, ...string[]];
+};
+
 type WeatherData = {
   location: string;
   temp: number;
@@ -24,7 +29,7 @@ type WeatherData = {
   feelslike: number;
   wind_kph: number;
   humidity: number;
-  hourly: HourlyForecast[]; // EKLENDİ
+  hourly: HourlyForecast[];
   daily: DailyForecast[];
 };
 
@@ -41,7 +46,13 @@ type DailyForecast = {
   iconUrl: string;
 };
 
-const getWeatherLook = (iconUrl: string) => {
+// --- DEĞİŞİKLİK 2: Fonksiyonun dönüş tipini belirttiğimiz tiple güncelledik ---
+const getWeatherLook = (iconUrl?: string): WeatherLook => {
+  // iconUrl gelmeme ihtimaline karşı bir güvenlik kontrolü
+  if (!iconUrl) {
+    return { gradient: ['#2c3e50', '#4a69bd'] };
+  }
+  
   const isDay = !iconUrl.includes('night');
   if (isDay) {
     return { gradient: ['#4a90e2', '#86c5f7'] };
@@ -68,17 +79,14 @@ const WeatherScreen: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // --- YENİ EKLENEN KISIM BAŞLANGICI ---
-        // API'den gelen saatlik veriyi işleyelim
         const hourlyForecasts: HourlyForecast[] = data.forecast.forecastday[0].hour
-          .filter((hour: any) => new Date(hour.time_epoch * 1000) > new Date()) // Sadece gelecek saatleri al
-          .slice(0, 8) // Gelecek 8 saati göster
+          .filter((hour: any) => new Date(hour.time_epoch * 1000) > new Date())
+          .slice(0, 8)
           .map((hour: any) => ({
             time: new Date(hour.time_epoch * 1000).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
             temp: hour.temp_c,
             iconUrl: `https:${hour.condition.icon}`,
           }));
-        // --- YENİ EKLENEN KISIM SONU ---
 
         const dailyForecasts: DailyForecast[] = data.forecast.forecastday.map((day: any) => ({
           date: new Date(day.date_epoch * 1000).toLocaleDateString('tr-TR', { weekday: 'long' }),
@@ -95,7 +103,7 @@ const WeatherScreen: React.FC = () => {
           feelslike: data.current.feelslike_c,
           wind_kph: data.current.wind_kph,
           humidity: data.current.humidity,
-          hourly: hourlyForecasts, // İşlenmiş saatlik veriyi state'e ekle
+          hourly: hourlyForecasts,
           daily: dailyForecasts,
         });
       } else {
@@ -133,7 +141,8 @@ const WeatherScreen: React.FC = () => {
     return <LinearGradient colors={['#2c3e50', '#4a69bd']} style={styles.centered}><ActivityIndicator size="large" color="#fff" /></LinearGradient>;
   }
 
-  const background = weatherData ? getWeatherLook(weatherData.iconUrl) : getWeatherLook('');
+  // --- DEĞİŞİKLİK 3: Daha güvenli bir çağrı için opsiyonel zincirleme (?) eklendi ---
+  const background = getWeatherLook(weatherData?.iconUrl);
 
   return (
     <LinearGradient colors={background.gradient} style={styles.container}>
@@ -165,8 +174,6 @@ const WeatherScreen: React.FC = () => {
                 <Text style={styles.feelsLikeText}>Hissedilen: {Math.round(weatherData.feelslike)}°</Text>
               </View>
               
-              {/* --- YENİ EKLENEN KISIM BAŞLANGICI --- */}
-              {/* SAATLİK TAHMİN KARTI */}
               <View style={styles.forecastSection}>
                 <Text style={styles.sectionTitle}>Saatlik Tahmin</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -179,7 +186,6 @@ const WeatherScreen: React.FC = () => {
                   ))}
                 </ScrollView>
               </View>
-              {/* --- YENİ EKLENEN KISIM SONU --- */}
 
               <View style={styles.forecastSection}>
                 <Text style={styles.sectionTitle}>5 Günlük Tahmin</Text>
@@ -202,7 +208,6 @@ const WeatherScreen: React.FC = () => {
   );
 };
 
-// Stillere saatlik tahmin için gerekli olanlar eklendi
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
@@ -221,8 +226,6 @@ const styles = StyleSheet.create({
   feelsLikeText: { fontSize: 16, color: 'rgba(255, 255, 255, 0.8)' },
   forecastSection: { width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 15, padding: 15, marginBottom: 20 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: 'rgba(255, 255, 255, 0.9)', marginBottom: 10 },
-  
-  // YENİ EKLENEN STİLLER
   hourlyItem: {
     alignItems: 'center',
     marginRight: 15,
@@ -238,7 +241,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 5,
   },
-  // MEVCUT STİLLER
   dailyItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
   dailyDate: { color: 'white', fontSize: 16, flex: 1 },
   forecastIcon: { width: 50, height: 50 },

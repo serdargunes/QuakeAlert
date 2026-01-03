@@ -1,40 +1,131 @@
-import React from 'react'
-import { View,Text, ScrollView,StatusBar } from 'react-native'
-import HomeScreen from './src/screens/HomeScreen'
-import SosScreen from './src/screens/SosScreen'
-import EarthquakeScreen from './src/screens/EarthquakeScreen/index'
-import { NavigationContainer } from '@react-navigation/native'
-import { createStackNavigator } from '@react-navigation/stack'
-import MapScreen from './src/screens/screens/MapScreen'
-import WeatherScreen from './src/screens/WeatherScreen'
+// App.tsx
 
+import React, { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import * as Notifications from 'expo-notifications';
 
+import { triggerSmsFlow } from './src/services/smsService';
 
+import HomeScreen from './src/screens/HomeScreen';
+import SosScreen from './src/screens/SosScreen';
+import EarthquakeScreen from './src/screens/EarthquakeScreen';
+import MyInfoScreen from './src/screens/MyInfoScreen';
+import WeatherScreen from './src/screens/WeatherScreen';
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
 
-function App() {
-  const Stack = createStackNavigator();
+    // ✅ SDK 54+ (iOS) uyumluluğu
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+const Stack = createStackNavigator();
+
+export default function App() {
+  const processedLastResponse = useRef(false);
+
+  useEffect(() => {
+    console.log('--- App.tsx useEffect BAŞLADI ---');
+
+    const setupNotifications = async () => {
+      // Android kanal ayarı
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+        });
+      }
+
+      // İzin iste
+      await Notifications.requestPermissionsAsync();
+
+      // iOS aksiyon butonları
+      await Notifications.setNotificationCategoryAsync('emergency', [
+        {
+          identifier: 'send-sms',
+          buttonTitle: 'Konumumu Gönder 🚨',
+          options: { opensAppToForeground: false },
+        },
+        {
+          identifier: 'im-ok',
+          buttonTitle: 'İyiyim 👍',
+          options: { isDestructive: true, opensAppToForeground: false },
+        },
+      ]);
+    };
+
+    const responseListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        if (response.actionIdentifier === 'send-sms') {
+          triggerSmsFlow();
+        }
+      });
+
+    const checkLastResponse = async () => {
+      if (processedLastResponse.current) return;
+
+      const lastResponse = await Notifications.getLastNotificationResponseAsync();
+
+      console.log(
+        '--- Son bildirim yanıtı (lastResponse):',
+        JSON.stringify(lastResponse, null, 2)
+      );
+
+      if (lastResponse?.actionIdentifier === 'send-sms') {
+        processedLastResponse.current = true;
+        triggerSmsFlow();
+      }
+    };
+
+    setupNotifications();
+    checkLastResponse();
+
+    // ✅ SDK 54+ cleanup (removeNotificationSubscription kaldırıldı)
+    return () => {
+      responseListener.remove();
+    };
+  }, []);
+
   return (
     <NavigationContainer>
-      <StatusBar barStyle="light-content" />
       <Stack.Navigator>
-        <Stack.Screen name = "Home" component={HomeScreen}
-        options={{
-          headerTintColor:'white',
-          headerStyle:{
-            backgroundColor:'#2a3e5a'
-            
-          }
-        }}
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ headerShown: false, title: 'Ana Sayfa' }}
         />
-        <Stack.Screen name = "SosScreen" component={SosScreen} />
-        <Stack.Screen name = "EarthquakeScreen" component={EarthquakeScreen} />
-        <Stack.Screen name="MapScreen" component={MapScreen} options={{ title: 'Harita' }} />
-        <Stack.Screen name="WeatherScreen" component={WeatherScreen} options={{ title: 'Hava Durumu' }} />
+
+        <Stack.Screen
+          name="SosScreen"
+          component={SosScreen}
+          options={{ headerShown: false, title: 'Acil Durum' }}
+        />
+
+        <Stack.Screen
+          name="EarthquakeScreen"
+          component={EarthquakeScreen}
+          options={{ title: 'Anlık Depremler' }}
+        />
+
+        <Stack.Screen
+          name="MyInfoScreen"
+          component={MyInfoScreen}
+          options={{ title: 'Bilgilerim' }}
+        />
+
+        <Stack.Screen
+          name="WeatherScreen"
+          component={WeatherScreen}
+          options={{ title: 'Hava Durumu' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
-  
-  )
+  );
 }
-
-export default App;

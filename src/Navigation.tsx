@@ -1,14 +1,24 @@
-// src/Navigation.ts
+import type { RouteProp } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
-import { createStackNavigator } from '@react-navigation/stack';
-
-// Uygulamanızdaki tüm ekranları ve alacakları parametreleri tanımlıyoruz.
 export type RootStackParamList = {
-  Home: undefined; // Home ekranı parametre almıyor
-  SosScreen: undefined; // SosScreen ekranı parametre almıyor
-  EarthquakeScreen: undefined; // EarthquakeScreen parametre almıyor
-  MapScreen: { latitude: number; longitude: number }; // MapScreen latitude ve longitude alıyor
+  Home: undefined;
+  SosScreen: undefined;
+  EarthquakeScreen: undefined;
   WeatherScreen: undefined;
+  // --- YENİ EKRANI BURAYA EKLEYİN ---
+  MyInfoScreen: undefined; 
+  MapScreen: {
+    latitude: number;
+    longitude: number;
+  };
 };
 
-export const Stack = createStackNavigator<RootStackParamList>();
+// MapScreen için tipleri tanımlayalım ki App.tsx'te hata almayalım
+export type MapScreenNavigationProp = StackNavigationProp<RootStackParamList, 'MapScreen'>;
+export type MapScreenRouteProp = RouteProp<RootStackParamList, 'MapScreen'>;
+
+export type MapScreenProps = {
+  navigation: MapScreenNavigationProp;
+  route: MapScreenRouteProp;
+};

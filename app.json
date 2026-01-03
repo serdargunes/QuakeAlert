@@ -2,6 +2,7 @@
   "expo": {
     "name": "QuakeAlert",
     "slug": "QuakeAlert",
+    "scheme": "quakealert",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,23 +15,30 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "y"
+      "bundleIdentifier": "com.serdar.quakealert",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Acil bir durumda konumunuzu belirlediğiniz kişilere gönderebilmek için konumunuza erişim gereklidir."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyAdSix9SNLrdOLyViES2Hz9I_Xvx4zh_pk"
-        }
-      },
-      "package": "com.anonymous.QuakeAlert"
+      "package": "com.serdar.quakealert"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-dev-client",
+      "expo-asset",
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "bb1b26cc-e2d7-4d8f-bbed-e5d226fa8b71"
+      }
     }
   }
 }

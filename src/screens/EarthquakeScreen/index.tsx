@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet, Text, Animated, Alert } from 'react-native';
 import MapView, { Marker, Circle } from 'react-native-maps';
 
-// Veri modelimiz
+
 type EarthquakeData = {
   id: string;
   Date: string;
@@ -14,15 +14,15 @@ type EarthquakeData = {
   Location: string;
 };
 
-// AFAD API'den gelen veriye uygun Tip Tanımlaması (İsteğe bağlı, ancak hata yakalamayı kolaylaştırır)
+
 type AfadDeprem = {
     eventID: string;
-    longitude: string; // AFAD API'de string olarak gelir
-    latitude: string;  // AFAD API'de string olarak gelir
+    longitude: string; 
+    latitude: string;  
     magnitude: number;
     depth: number;
     location: string;
-    date: string; // YYYY-MM-DD HH:MM:SS formatında gelir
+    date: string;
 };
 
 
@@ -35,10 +35,10 @@ const EarthquakeScreen: React.FC = () => {
   useEffect(() => {
     const fetchEarthquakeData = async () => {
       
-      // 1. ADIM: 72 Saatlik (3 Günlük) Tarih Aralığını Hesaplama
+     
       const endDate = new Date();
       const startDate = new Date(endDate);
-      startDate.setDate(endDate.getDate() - 3); // Bugün - 3 gün = Son 72 saatten biraz fazlası
+      startDate.setDate(endDate.getDate() - 3); 
 
       const formatAfadDate = (date: Date): string => {
         const year = date.getFullYear();
@@ -53,7 +53,7 @@ const EarthquakeScreen: React.FC = () => {
       const startDateStr = formatAfadDate(startDate);
       const endDateStr = formatAfadDate(endDate);
 
-      // AFAD API endpoint'i: minmag=2.5 ve tarih aralığı ile tek istekte çekim
+      
       const AFAD_API_URL = `https://deprem.afad.gov.tr/apiv2/event/filter?format=json&minmag=2.5&start=${encodeURIComponent(startDateStr)}&end=${encodeURIComponent(endDateStr)}`;
 
       try {
@@ -67,21 +67,17 @@ const EarthquakeScreen: React.FC = () => {
         
         const rawData: AfadDeprem[] = await response.json();
         
-        // AFAD'dan boş dizi gelmesi de bir başarıdır (o aralıkta deprem yok demektir)
         if (Array.isArray(rawData)) {
             
-          // 2. ADIM: AFAD Veri Yapısını Proje Modeline Dönüştürme
           const parsedData: EarthquakeData[] = rawData
             .map((dep: AfadDeprem) => {
               
-              // AFAD verisinde tarih ve saat tek bir alanda (date) gelir
               const datetime = dep.date.split(' '); 
               
               return {
-                id: dep.eventID, // AFAD eventID'sini kullan
+                id: dep.eventID, 
                 Date: datetime[0],
                 Time: datetime[1],
-                // AFAD verisi string olarak geldiği için Number() ile dönüştür
                 Latitude: Number(dep.latitude), 
                 Longitude: Number(dep.longitude), 
                 Depth: dep.depth,
@@ -89,24 +85,19 @@ const EarthquakeScreen: React.FC = () => {
                 Location: dep.location,
               };
             })
-            // AFAD API'den gelen veride bazen koordinatlar NaN olabilir, filtrele
             .filter(eq => !isNaN(eq.Latitude) && !isNaN(eq.Longitude)); 
             
           setEarthquakes(parsedData);
           console.log(`AFAD API'den ${parsedData.length} adet deprem verisi çekildi.`);
         } else {
-            // Yanıt 200 OK olsa bile JSON beklenen dizi formatında değilse
             console.warn("AFAD API'den geçerli bir dizi formatında veri gelmedi.");
         }
 
       } catch (error) {
-        // Hata Yönetimi İyileştirmesi: Konsola detaylı hata basma
         console.error("Deprem verisi alınamadı. Lütfen internet bağlantınızı ve API URL'sini kontrol edin. Hata:", error);
-        // Kullanıcıya da bilgi verme
         Alert.alert("Hata", "Deprem verileri çekilemedi. Lütfen internet bağlantınızı kontrol edin.");
       } finally {
         setLoading(false);
-        // Uyarıyı 72 saatlik veri için göster
         setShowWarning(true);
         Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
         setTimeout(() => {
@@ -118,7 +109,6 @@ const EarthquakeScreen: React.FC = () => {
     fetchEarthquakeData();
   }, [fadeAnim]);
 
-  // Yükleme ekranı
   if (loading) {
     return (
       <View style={styles.loader}>
@@ -127,13 +117,12 @@ const EarthquakeScreen: React.FC = () => {
     );
   }
 
-  // Ana Ekran ve Harita
   return (
     <View style={styles.fullScreenContainer}>
       <MapView
         style={styles.map}
         initialRegion={{
-          latitude: 39.0, // Türkiye merkezi
+          latitude: 39.0, 
           longitude: 35.0,
           latitudeDelta: 15,
           longitudeDelta: 15,
@@ -147,7 +136,7 @@ const EarthquakeScreen: React.FC = () => {
               description={`Tarih: ${eq.Date} Saat: ${eq.Time} Derinlik: ${eq.Depth}km`}
               pinColor="red"
             />
-            {/* Depremin büyüklüğüne göre haritada çember (Circle) çizimi */}
+  
             <Circle
               center={{ latitude: eq.Latitude, longitude: eq.Longitude }}
               radius={eq.Magnitude * 8000} 

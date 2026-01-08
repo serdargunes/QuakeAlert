@@ -1,4 +1,4 @@
-// src/services/smsService.ts
+
 
 import * as Location from "expo-location";
 import * as SMS from "expo-sms";

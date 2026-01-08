@@ -1,5 +1,3 @@
-// src/screens/SosScreen/index.tsx
-
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -29,10 +27,9 @@ const SosScreen: React.FC = () => {
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>(["", "", ""]);
   const [isAccelerometerActive, setIsAccelerometerActive] = useState(false);
 
-  // Acil durumun tekrar tekrar tetiklenmesini önlemek için bayrak
   const isTriggeredRef = useRef(false);
 
-  // Numaraları component açıldığında yükle
+
   useEffect(() => {
     const loadNumbers = async () => {
       const saved = await AsyncStorage.getItem("phoneNumbers");
@@ -44,7 +41,7 @@ const SosScreen: React.FC = () => {
     loadNumbers();
   }, []);
 
-  // İvmeölçer dinleyicisi
+
   useEffect(() => {
     let subscription: any;
     if (isAccelerometerActive) {
@@ -80,7 +77,7 @@ const SosScreen: React.FC = () => {
   };
 
   const onEmergencyTriggered = async () => {
-    // Eğer acil durum son 15 saniye içinde zaten tetiklendiyse, hiçbir şey yapma
+ 
     if (isTriggeredRef.current) {
       console.log("Acil durum zaten tetiklenmiş, 15 saniye bekleniyor...");
       return;
@@ -108,7 +105,7 @@ const SosScreen: React.FC = () => {
       trigger: null,
     });
 
-    // 15 saniye sonra yeni tetiklemelere izin ver
+
     setTimeout(() => {
       console.log("Bekleme süresi doldu, yeni tetiklemelere izin veriliyor.");
       isTriggeredRef.current = false;
@@ -127,7 +124,7 @@ const SosScreen: React.FC = () => {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* ÜST BAŞLIK (tekilleştirildi) */}
+  
             <View style={styles.top}>
               <View style={styles.logoBadge}>
                 <MaterialCommunityIcons
@@ -140,9 +137,8 @@ const SosScreen: React.FC = () => {
              
             </View>
 
-            {/* FORM KART */}
             <View style={styles.card}>
-              {/* Kart içi başlıklar sadeleştirildi (tekrar yok) */}
+            
               <Text style={styles.cardTitle}>Acil Durum Kişileri</Text>
               <Text style={styles.cardSub}>
                 Konumunuzun gönderileceği 3 numarayı girin.
@@ -173,14 +169,14 @@ const SosScreen: React.FC = () => {
                 </View>
               ))}
 
-              {/* Ayırıcı */}
+             
               <View style={styles.dividerRow}>
                 <View style={styles.dividerLine} />
                 <Text style={styles.dividerText}>•</Text>
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* Kaydet Butonu + açıklama */}
+             
               <TouchableOpacity
                 style={styles.primaryButton}
                 onPress={handleSaveNumbers}
@@ -192,7 +188,7 @@ const SosScreen: React.FC = () => {
                 Kaydettiğinizde düşme algılama otomatik olarak aktif olur.
               </Text>
 
-              {/* Test Butonu + açıklama */}
+            
               <TouchableOpacity
                 style={styles.dangerButton}
                 onPress={onEmergencyTriggered}

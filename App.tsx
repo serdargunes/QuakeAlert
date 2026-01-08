@@ -1,4 +1,4 @@
-// App.tsx
+
 
 import React, { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
@@ -20,7 +20,7 @@ Notifications.setNotificationHandler({
     shouldPlaySound: true,
     shouldSetBadge: false,
 
-    // ✅ SDK 54+ (iOS) uyumluluğu
+
     shouldShowBanner: true,
     shouldShowList: true,
   }),
@@ -35,7 +35,7 @@ export default function App() {
     console.log('--- App.tsx useEffect BAŞLADI ---');
 
     const setupNotifications = async () => {
-      // Android kanal ayarı
+
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
           name: 'default',
@@ -43,10 +43,10 @@ export default function App() {
         });
       }
 
-      // İzin iste
+
       await Notifications.requestPermissionsAsync();
 
-      // iOS aksiyon butonları
+
       await Notifications.setNotificationCategoryAsync('emergency', [
         {
           identifier: 'send-sms',
@@ -87,7 +87,6 @@ export default function App() {
     setupNotifications();
     checkLastResponse();
 
-    // ✅ SDK 54+ cleanup (removeNotificationSubscription kaldırıldı)
     return () => {
       responseListener.remove();
     };
@@ -111,19 +110,19 @@ export default function App() {
         <Stack.Screen
           name="EarthquakeScreen"
           component={EarthquakeScreen}
-          options={{ title: 'Anlık Depremler' }}
+          options={{title: 'Anlık Depremler' }}
         />
 
         <Stack.Screen
           name="MyInfoScreen"
           component={MyInfoScreen}
-          options={{ title: 'Bilgilerim' }}
+          options={{headerShown:false, title: 'Bilgilerim' }}
         />
 
         <Stack.Screen
           name="WeatherScreen"
           component={WeatherScreen}
-          options={{ title: 'Hava Durumu' }}
+          options={{headerShown:false, title: 'Hava Durumu' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

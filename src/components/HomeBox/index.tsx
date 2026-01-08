@@ -28,7 +28,7 @@ type BoxDataItem = {
 function HomeBox() {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  // ✅ İçeriğe dokunmadım
+
   const boxData: BoxDataItem[] = [
     { id: '1', icon: 'account-alert-outline', iconSet: 'MaterialCommunityIcons', color: '#b185fa', text: 'Acil Durum', navigateTo: 'SosScreen' },
     { id: '2', icon: 'crisis-alert', iconSet: 'MaterialIcons', color: '#fe9899', text: 'Anlık Depremler', navigateTo: 'EarthquakeScreen' },
@@ -51,7 +51,7 @@ function HomeBox() {
     <View style={styles.screen}>
       <StatusBar barStyle="light-content" />
 
-      {/* Header (2. görseldeki gibi) */}
+      {/* Header  */}
       <View style={styles.header}>
       </View>
 
@@ -68,14 +68,14 @@ function HomeBox() {
             onPress={() => navigation.navigate(item.navigateTo)}
             style={styles.cardWrap}
           >
-            {/* Kart arka plan (dark + yumuşak) */}
+            {/* Kart arka plan  */}
             <LinearGradient
               colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.03)']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.card}
             >
-              {/* İkon yuvarlağı (renkli gradient hissi) */}
+              {/* İkon yuvarlağı  */}
               <LinearGradient
                 colors={[item.color, 'rgba(255,255,255,0.15)']}
                 start={{ x: 0.1, y: 0.1 }}
@@ -87,7 +87,7 @@ function HomeBox() {
 
               <Text style={styles.cardText}>{item.text}</Text>
 
-              {/* Alt küçük çizgi (daha “app-like” görünüm) */}
+      
               <View style={styles.cardDivider} />
             </LinearGradient>
           </TouchableOpacity>
@@ -102,7 +102,7 @@ const CARD_W = (width - 24 * 2 - 14) / 2;
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#222B44', // 1. görselindeki koyu arka plan hissi
+    backgroundColor: '#222B44', 
   },
 
   header: {
@@ -143,13 +143,13 @@ const styles = StyleSheet.create({
     height: 170,
     justifyContent: 'space-between',
 
-    // iOS shadow
+
     shadowColor: '#000',
     shadowOpacity: 0.22,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
 
-    // Android shadow
+ 
     elevation: 8,
 
     borderWidth: 1,

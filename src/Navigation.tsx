@@ -6,7 +6,7 @@ export type RootStackParamList = {
   SosScreen: undefined;
   EarthquakeScreen: undefined;
   WeatherScreen: undefined;
-  // --- YENİ EKRANI BURAYA EKLEYİN ---
+
   MyInfoScreen: undefined; 
   MapScreen: {
     latitude: number;
@@ -14,7 +14,7 @@ export type RootStackParamList = {
   };
 };
 
-// MapScreen için tipleri tanımlayalım ki App.tsx'te hata almayalım
+
 export type MapScreenNavigationProp = StackNavigationProp<RootStackParamList, 'MapScreen'>;
 export type MapScreenRouteProp = RouteProp<RootStackParamList, 'MapScreen'>;
 

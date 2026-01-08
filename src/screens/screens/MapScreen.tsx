@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../../Navigation'; // Dosya yolunu güncelledim
+import { RootStackParamList } from '../../Navigation'; 
 
 type MapScreenRouteProp = RouteProp<RootStackParamList, 'MapScreen'>;
 
@@ -15,7 +15,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      {/* MapView'dan "provider" prop'u kaldırıldı */}
+
       <MapView
         style={styles.map}
         initialRegion={{

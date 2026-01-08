@@ -8,11 +8,11 @@ import {
   SafeAreaView,
   Alert,
   Dimensions,
-  KeyboardAvoidingView, // <-- 1. YENİ İMPORT
-  ScrollView,           // <-- 2. YENİ İMPORT
+  KeyboardAvoidingView,
+  ScrollView,           
   Platform,
-  TouchableWithoutFeedback, // <-- 3. YENİ İMPORT
-  Keyboard              // <-- 4. YENİ İMPORT
+  TouchableWithoutFeedback, 
+  Keyboard              
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -53,7 +53,7 @@ const MyInfoScreen: React.FC = () => {
   const handleSaveInfo = async () => {
     try {
       await AsyncStorage.setItem('user_info', JSON.stringify(userInfo));
-      Keyboard.dismiss(); // Kaydettikten sonra klavyeyi kapat
+      Keyboard.dismiss();
       Alert.alert('Başarılı', 'Bilgileriniz başarıyla kaydedildi.');
     } catch (error) {
       Alert.alert('Hata', 'Bilgiler kaydedilirken bir sorun oluştu.');
@@ -63,14 +63,14 @@ const MyInfoScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Klavye açıldığında görünümü yukarı itecek sarmalayıcı */}
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.container}
       >
-        {/* Boş bir alana tıklandığında klavyeyi kapatmak için */}
+  
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          {/* Ekranın kaydırılabilir olmasını sağlayan sarmalayıcı */}
+   
           <ScrollView contentContainerStyle={styles.innerContainer}>
             <View style={styles.content}>
               <Text style={styles.title}>Kişisel Bilgilerim</Text>
@@ -124,63 +124,98 @@ const MyInfoScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#f5f5f5',
-    },
-    // ScrollView'ın içindeki alanı ortalamak için yeni stil
-    innerContainer: {
-        flexGrow: 1,
-        justifyContent: 'space-between',
-    },
-    content: {
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingTop: 20,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#333',
-    },
-    subtitle: {
-      fontSize: 14,
-      color: '#666',
-      textAlign: 'center',
-      marginVertical: 15,
-      marginBottom: 20,
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: "#ccc",
-      borderRadius: 8,
-      paddingVertical: 12,
-      paddingHorizontal: 15,
-      marginVertical: 8,
-      fontSize: 16,
-      backgroundColor: "#FFFFFF",
-      width: width * 0.90,
-    },
-    buttonContainer: {
-      width: '100%',
-      paddingBottom: 40,
-      alignItems: 'center',
-      paddingTop: 20, // Buton ile inputlar arasına boşluk ekledik
-    },
-    button: {
-      borderRadius: 12,
-      paddingVertical: 15,
-      width: width * 0.90,
-      alignItems: 'center',
-      marginVertical: 5,
-      backgroundColor: '#2a3e5a',
-    },
-    buttonText: {
-      color: 'white',
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
+  container: {
+    flex: 1,
+    backgroundColor: '#DDE3EC', 
+  },
+
+  innerContainer: {
+    flexGrow: 1,
+    justifyContent: 'center', 
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
+  },
+
+
+  content: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingTop: 20,
+    paddingBottom: 18,
+    marginTop: 10,
+
+
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+
+
+    elevation: 4,
+  },
+
+  title: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: 0.2,
+    marginBottom: 8,
+  },
+
+  subtitle: {
+    fontSize: 13.5,
+    lineHeight: 19,
+    color: '#64748B',
+    marginBottom: 18,
+  },
+
+  input: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+
+    fontSize: 16,
+    color: '#0F172A',
+
+    marginVertical: 9,
+  },
+
+  buttonContainer: {
+    width: '100%',
+    alignItems: 'center',
+    paddingTop: 16,
+    paddingBottom: 28,
+  },
+
+  button: {
+    width: '100%',
+    borderRadius: 16,
+    paddingVertical: 15,
+    alignItems: 'center',
+    backgroundColor: '#23395D',
+
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 5,
+  },
+
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
 });
+
 
 export default MyInfoScreen;
 
